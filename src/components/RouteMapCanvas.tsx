@@ -40,15 +40,52 @@ export function RouteMapCanvas({
   const styleReadyRef = useRef(false);
   const cameraRef = useRef<mapboxgl.CameraOptions | null>(null);
   const fittedRef = useRef<unknown>(null);
-  const [provider, setProvider] = useState(MAPBOX_TOKEN ? 'mapbox' : 'carto');
+  const [provider, setProvider] = useState<
+    'mapbox' | 'carto' | 'osm' | 'routes'
+  >(MAPBOX_TOKEN ? 'mapbox' : 'carto');
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
   );
   const [retry, setRetry] = useState(0);
-  const style =
-    provider === 'mapbox'
-      ? `mapbox://styles/mapbox/${dark === false ? 'light' : 'dark'}-v11`
-      : `https://basemaps.cartocdn.com/gl/${dark === false ? 'positron' : 'dark-matter'}-gl-style/style.json`;
+  const style = useMemo<string | mapboxgl.StyleSpecification>(() => {
+    if (provider === 'mapbox') {
+      return `mapbox://styles/mapbox/${dark === false ? 'light' : 'dark'}-v11`;
+    }
+    const background: mapboxgl.BackgroundLayerSpecification = {
+      id: 'background',
+      type: 'background',
+      paint: { 'background-color': dark === false ? '#f1f5f9' : '#202020' },
+    };
+    if (provider === 'routes') {
+      return { version: 8, sources: {}, layers: [background] };
+    }
+    return {
+      version: 8,
+      sources: {
+        basemap: {
+          type: 'raster',
+          tiles:
+            provider === 'carto'
+              ? ['a', 'b', 'c', 'd'].map(
+                  (host) =>
+                    `https://${host}.basemaps.cartocdn.com/${dark === false ? 'light_all' : 'dark_all'}/{z}/{x}/{y}.png`
+                )
+              : ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          maxzoom: 19,
+          attribution:
+            (provider === 'carto'
+              ? '<a href="https://carto.com/attributions">&copy; CARTO</a> · '
+              : '') +
+            '<a href="https://www.openstreetmap.org/copyright">&copy; OpenStreetMap contributors</a>',
+        },
+      },
+      layers: [
+        background,
+        { id: 'basemap', type: 'raster', source: 'basemap' },
+      ],
+    };
+  }, [provider, dark]);
 
   const displayActivity = useMemo(
     () =>
@@ -123,7 +160,8 @@ export function RouteMapCanvas({
     if (!map || !styleReadyRef.current) return;
     const data = { type: 'FeatureCollection' as const, features: routes };
     const source = map.getSource('routes') as
-      mapboxgl.GeoJSONSource | undefined;
+      | mapboxgl.GeoJSONSource
+      | undefined;
     if (source) source.setData(data);
     else {
       map.addSource('routes', { type: 'geojson', data });
@@ -153,6 +191,12 @@ export function RouteMapCanvas({
     }
   }, [routes, selectedActivity, fitRoutes]);
 
+  const drawRoutesRef = useRef(drawRoutes);
+  useEffect(() => {
+    drawRoutesRef.current = drawRoutes;
+    drawRoutes();
+  }, [drawRoutes]);
+
   useEffect(() => {
     if (!containerRef.current || !panelRef.current) return;
     const map = new mapboxgl.Map({
@@ -176,6 +220,7 @@ export function RouteMapCanvas({
         : {},
     });
     mapRef.current = map;
+    fittedRef.current = null;
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
     map.addControl(
       new mapboxgl.FullscreenControl({ container: panelRef.current }),
@@ -203,53 +248,64 @@ export function RouteMapCanvas({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    let failed = false;
+    let settled = false;
+    let switching = false;
+    const nextBasemap = () => {
+      if (switching) return;
+      switching = true;
+      setStatus('loading');
+      setProvider(
+        provider === 'mapbox'
+          ? 'carto'
+          : provider === 'carto'
+            ? 'osm'
+            : 'routes'
+      );
+    };
     const onError = (event: mapboxgl.ErrorEvent) => {
-      const code = (event.error as Error & { status?: number }).status;
-      if (provider === 'mapbox' && (code === 401 || code === 403)) {
-        setProvider('carto');
-      } else {
-        failed = true;
+      if (event.sourceId === 'routes' || provider === 'routes') {
         setStatus('error');
+        return;
       }
+      nextBasemap();
     };
     const onIdle = () => {
-      if (!failed) setStatus('ready');
+      if (!switching) {
+        settled = true;
+        setStatus('ready');
+      }
+    };
+    const onStyleLoad = () => {
+      styleReadyRef.current = true;
+      drawRoutesRef.current();
+      if (provider === 'routes') {
+        settled = true;
+        setStatus('ready');
+      }
     };
     const onLoading = () => setStatus('loading');
+    map.on('styledataloading', onLoading);
     map.on('error', onError);
     map.on('idle', onIdle);
-    map.once('styledataloading', onLoading);
+    map.on('style.load', onStyleLoad);
     styleReadyRef.current = false;
+    fittedRef.current = null;
     map.setStyle(style, {
       diff: false,
       localFontFamily: undefined,
       localIdeographFontFamily: 'sans-serif',
     });
     const timer = window.setTimeout(() => {
-      if (!map.isStyleLoaded()) setStatus('error');
+      if (!settled && provider !== 'routes') nextBasemap();
     }, 15000);
     return () => {
       window.clearTimeout(timer);
+      map.off('styledataloading', onLoading);
       map.off('error', onError);
       map.off('idle', onIdle);
-      map.off('styledataloading', onLoading);
-    };
-  }, [style, provider, retry, zh]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const onStyleLoad = () => {
-      styleReadyRef.current = true;
-      drawRoutes();
-    };
-    map.on('style.load', onStyleLoad);
-    drawRoutes();
-    return () => {
       map.off('style.load', onStyleLoad);
     };
-  }, [drawRoutes, style, retry, zh]);
+  }, [style, provider, retry, zh]);
 
   useEffect(() => {
     let wasFullscreen = document.fullscreenElement === panelRef.current;
@@ -334,21 +390,19 @@ export function RouteMapCanvas({
         <span role="status" aria-live="polite">
           {status === 'error'
             ? zh
-              ? '底图加载失败，请重试'
-              : 'Basemap failed to load'
-            : status === 'loading'
+              ? '路线绘制失败，请重试'
+              : 'Route rendering failed. Please retry.'
+            : provider === 'routes'
               ? zh
-                ? '正在加载地图…'
-                : 'Loading map…'
-              : provider === 'carto'
+                ? '底图暂不可用，仅显示 GPS 路线'
+                : 'Basemap unavailable · GPS routes only'
+              : status === 'loading'
                 ? zh
-                  ? '备用底图 · CARTO'
-                  : 'Alternative basemap · CARTO'
-                : zh
-                  ? '底图 · Mapbox'
-                  : 'Basemap · Mapbox'}
+                  ? '正在加载地图…'
+                  : 'Loading map…'
+                : `Basemap · ${provider === 'carto' ? 'CARTO' : provider === 'osm' ? 'OpenStreetMap' : 'Mapbox'}`}
         </span>
-        {(status === 'error' || (provider === 'carto' && !!MAPBOX_TOKEN)) && (
+        {(status === 'error' || provider === 'routes') && (
           <button
             className="route-map-action"
             onClick={() => {
@@ -356,13 +410,7 @@ export function RouteMapCanvas({
               setRetry((value) => value + 1);
             }}
           >
-            {provider === 'carto' && MAPBOX_TOKEN
-              ? zh
-                ? '重试 Mapbox'
-                : 'Retry Mapbox'
-              : zh
-                ? '重试'
-                : 'Retry'}
+            {zh ? '重试底图' : 'Retry basemap'}
           </button>
         )}
       </div>
