@@ -23,7 +23,8 @@
     "react-router-dom": "^7.14.2",
     "recharts": "^3.8.1",
     "vite": "^8.0.10",
-    "vite-plugin-svgr": "^5.2.0"
+    "vite-plugin-svgr": "^5.2.0",
+    "maplibre-gl": "5.24.0"
   },
   "license": "MIT",
   "private": true,
