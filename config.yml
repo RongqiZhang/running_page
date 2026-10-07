@@ -16,7 +16,7 @@ mapbox_token: ''
 avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTtc69JxHNcmN1ETpMUX4dozAgAN6iPjWalQ&usqp=CAU'
 
 # 默认语言：zh（中文）| en（英文）
-locale: zh
+locale: en
 
 # 默认主题：system（跟随系统）| light（浅色）| dark（深色）
 theme: dark
@@ -31,13 +31,13 @@ theme_preset: dashboard
 
 goals:
   all:
-    yearly: 2000
-    monthly: 150
-    weekly: 35
+    yearly: 500
+    monthly: 90
+    weekly: 20
     unit: distance
 
   Run:
-    yearly: 2000
-    monthly: 150
-    weekly: 35
+    yearly: 500
+    monthly: 90
+    weekly: 20
     unit: distance
