@@ -206,7 +206,6 @@ export function getAvailableYears(activities: Activity[]): number[] {
   return Array.from(years).sort((a, b) => b - a);
 }
 
-
 type ProvinceFeature = {
   properties: { name: string };
   geometry: { type: string; coordinates: number[][][] | number[][][][] };
@@ -226,7 +225,7 @@ function firstRoutePoint(encoded: string): [number, number] | null {
       result |= (part & 31) << shift;
       shift += 5;
     } while (part >= 32);
-    values.push(((result & 1) ? ~(result >> 1) : (result >> 1)) / 1e5);
+    values.push((result & 1 ? ~(result >> 1) : result >> 1) / 1e5);
   }
   const [lat, lng] = values;
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
@@ -239,23 +238,30 @@ function ringContains(point: [number, number], ring: number[][]): boolean {
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const [xi, yi] = ring[i];
     const [xj, yj] = ring[j];
-    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
       inside = !inside;
     }
   }
   return inside;
 }
 
-function provinceFromRoute(encoded: string, features: ProvinceFeature[]): string | null {
+function provinceFromRoute(
+  encoded: string,
+  features: ProvinceFeature[]
+): string | null {
   const point = firstRoutePoint(encoded);
   if (!point) return null;
   for (const feature of features) {
-    const polygons = feature.geometry.type === 'Polygon'
-      ? [feature.geometry.coordinates as number[][][]]
-      : feature.geometry.coordinates as number[][][][];
+    const polygons =
+      feature.geometry.type === 'Polygon'
+        ? [feature.geometry.coordinates as number[][][]]
+        : (feature.geometry.coordinates as number[][][][]);
     for (const rings of polygons) {
-      if (rings.length && ringContains(point, rings[0]) &&
-          !rings.slice(1).some((hole) => ringContains(point, hole))) {
+      if (
+        rings.length &&
+        ringContains(point, rings[0]) &&
+        !rings.slice(1).some((hole) => ringContains(point, hole))
+      ) {
         return feature.properties.name;
       }
     }
@@ -278,13 +284,29 @@ const loadActivityData = () => {
       return response.json() as Promise<Activity[]>;
     })
     .then(async (data) => {
-      if (data.some((activity) => !extractProvince(activity.location_country) && activity.summary_polyline)) {
+      if (
+        data.some(
+          (activity) =>
+            !extractProvince(activity.location_country) &&
+            activity.summary_polyline
+        )
+      ) {
         const provinces = await import('../../assets/china-provinces.json');
-        const features = (provinces.default as { features: ProvinceFeature[] }).features;
+        const features = (provinces.default as { features: ProvinceFeature[] })
+          .features;
         data = data.map((activity) => {
-          if (extractProvince(activity.location_country) || !activity.summary_polyline) return activity;
-          const province = provinceFromRoute(activity.summary_polyline, features);
-          return province ? { ...activity, location_country: province } : activity;
+          if (
+            extractProvince(activity.location_country) ||
+            !activity.summary_polyline
+          )
+            return activity;
+          const province = provinceFromRoute(
+            activity.summary_polyline,
+            features
+          );
+          return province
+            ? { ...activity, location_country: province }
+            : activity;
         });
       }
       activityDataCache = data;
