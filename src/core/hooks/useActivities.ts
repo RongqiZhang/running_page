@@ -206,6 +206,63 @@ export function getAvailableYears(activities: Activity[]): number[] {
   return Array.from(years).sort((a, b) => b - a);
 }
 
+
+type ProvinceFeature = {
+  properties: { name: string };
+  geometry: { type: string; coordinates: number[][][] | number[][][][] };
+};
+
+function firstRoutePoint(encoded: string): [number, number] | null {
+  let index = 0;
+  const values: number[] = [];
+  for (let dimension = 0; dimension < 2; dimension++) {
+    let result = 0;
+    let shift = 0;
+    let part: number;
+    do {
+      if (index >= encoded.length || shift > 30) return null;
+      part = encoded.charCodeAt(index++) - 63;
+      if (part < 0 || part > 63) return null;
+      result |= (part & 31) << shift;
+      shift += 5;
+    } while (part >= 32);
+    values.push(((result & 1) ? ~(result >> 1) : (result >> 1)) / 1e5);
+  }
+  const [lat, lng] = values;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return [lng, lat];
+}
+
+function ringContains(point: [number, number], ring: number[][]): boolean {
+  const [x, y] = point;
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function provinceFromRoute(encoded: string, features: ProvinceFeature[]): string | null {
+  const point = firstRoutePoint(encoded);
+  if (!point) return null;
+  for (const feature of features) {
+    const polygons = feature.geometry.type === 'Polygon'
+      ? [feature.geometry.coordinates as number[][][]]
+      : feature.geometry.coordinates as number[][][][];
+    for (const rings of polygons) {
+      if (rings.length && ringContains(point, rings[0]) &&
+          !rings.slice(1).some((hole) => ringContains(point, hole))) {
+        return feature.properties.name;
+      }
+    }
+  }
+  return null;
+}
+
 // Async data loading (fetch-based, compatible with Suspense)
 import activitiesUrl from '@/static/activities.json?url';
 
@@ -220,7 +277,16 @@ const loadActivityData = () => {
         throw new Error(`Failed to load activities: ${response.status}`);
       return response.json() as Promise<Activity[]>;
     })
-    .then((data) => {
+    .then(async (data) => {
+      if (data.some((activity) => !extractProvince(activity.location_country) && activity.summary_polyline)) {
+        const provinces = await import('../../assets/china-provinces.json');
+        const features = (provinces.default as { features: ProvinceFeature[] }).features;
+        data = data.map((activity) => {
+          if (extractProvince(activity.location_country) || !activity.summary_polyline) return activity;
+          const province = provinceFromRoute(activity.summary_polyline, features);
+          return province ? { ...activity, location_country: province } : activity;
+        });
+      }
       activityDataCache = data;
       return data;
     })
