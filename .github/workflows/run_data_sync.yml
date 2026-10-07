@@ -304,6 +304,10 @@ jobs:
           echo "BUILD_GH_PAGES=$BUILD_GH_PAGES" >> "$GITHUB_OUTPUT"
 
   publish_github_pages:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     if: needs.sync.result == 'success' && needs.sync.outputs.BUILD_GH_PAGES == 'true'
     name: Build and publish Github Pages
     uses: ./.github/workflows/gh-pages.yml
