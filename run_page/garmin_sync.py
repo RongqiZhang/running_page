@@ -19,11 +19,11 @@ from io import BytesIO
 
 import aiofiles
 import garth
+import garth.sso
 import httpx
 from config import FOLDER_DICT, JSON_FILE, SQL_FILE
 from garmin_device_adaptor import process_garmin_data
 from lxml import etree
-
 from utils import make_activities_file
 
 # logging.basicConfig(level=logging.DEBUG)
@@ -63,12 +63,21 @@ class Garmin:
         if auth_domain and str(auth_domain).upper() == "CN":
             garth.configure(domain="garmin.cn", ssl_verify=False)
         self.modern_url = self.URL_DICT.get("MODERN_URL")
+        # Garth 0.6.3 supplies this header explicitly during OAuth exchange,
+        # so updating only the session header would not affect token refresh.
+        browser_user_agent = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        )
+        garth.client.sess.headers.update({"User-Agent": browser_user_agent})
+        garth.sso.USER_AGENT.update({"User-Agent": browser_user_agent})
         garth.client.loads(secret_string)
         if garth.client.oauth2_token.expired:
             garth.client.refresh_oauth2()
 
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36",
+            "User-Agent": browser_user_agent,
             "origin": self.URL_DICT.get("SSO_URL_ORIGIN"),
             "nk": "NT",
             "Authorization": str(garth.client.oauth2_token),
