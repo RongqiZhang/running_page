@@ -41,3 +41,4 @@ goals:
     monthly: 90
     weekly: 20
     unit: distance
+carto_basemap_key: 'cb1_4h5y_1_6a51e6f98c34a85b3b103e7e'
