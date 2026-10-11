@@ -2,34 +2,50 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --color-bg: #f5f5f5;
-  --color-card: #ffffff;
-  --color-border: #d4d4d4;
-  --color-text: #1f2328;
-  --color-muted: #626262;
-  --color-run: #f97316;
+@theme static {
+  --color-bg: #f0f1ec;
+  --color-card: #fffefa;
+  --color-border: #d9dfd9;
+  --color-text: #293d48;
+  --color-muted: #596c71;
+  --color-run: #356bb7;
   --color-on-accent: #ffffff;
-  --color-all: #0c4a6e;
+  --color-all: #356bb7;
   --color-accent: var(--color-all);
+  --color-positive: #087f6f;
+  --color-negative: #bb547b;
+  --color-run-1: #c1d9f3;
+  --color-run-2: #88b7e7;
+  --color-run-3: #508fd1;
+  --color-run-4: #356bb7;
+  --color-empty-day: #e7ebe5;
+  --color-progress-start: #437de2;
+  --color-progress-end: #36a9a0;
 }
 
 .dark {
-  --color-all: #ceff00;
-  --color-on-accent: #171717;
-  --color-bg: #171717;
-  --color-card: #202020;
-  --color-border: #383838;
-  --color-text: #ededed;
-  --color-muted: #a3a3a3;
+  --color-all: #8fbfff;
+  --color-on-accent: #0c1b30;
+  --color-bg: #080f1d;
+  --color-card: #182332;
+  --color-border: #425b78;
+  --color-text: #e6effb;
+  --color-muted: #a2b6d0;
+  --color-run: #356bb7;
+  --color-positive: #60e2ba;
+  --color-negative: #ff9ebc;
+  --color-run-1: #416b9b;
+  --color-run-2: #6094ca;
+  --color-run-3: #87b9ef;
+  --color-run-4: #b2d8ff;
+  --color-empty-day: #2a3544;
+  --color-progress-start: #659cff;
+  --color-progress-end: #63c9bc;
 }
 
-[data-filter='all'] {
-  --color-accent: var(--color-all);
-}
+[data-filter='all'],
 [data-filter='Run'] {
-  --color-accent: #f97316;
-  --color-on-accent: #171717;
+  --color-accent: var(--color-all);
 }
 
 body {
@@ -117,4 +133,33 @@ body {
 }
 .dashboard .exporting .track-cell {
   content-visibility: visible;
+}
+
+/* Match the map controls to the dashboard palette. */
+.dashboard .maplibregl-ctrl-group {
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  box-shadow: 0 4px 14px #0713231a;
+}
+.dashboard .maplibregl-ctrl-group button + button {
+  border-color: var(--color-border);
+}
+.dashboard .maplibregl-ctrl-group button:hover {
+  background: var(--color-bg);
+}
+.dark .dashboard .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+.dashboard .maplibregl-ctrl-scale {
+  border-color: var(--color-muted);
+  background: var(--color-card);
+  color: var(--color-text);
+}
+
+.dashboard .goal-progress {
+  background: linear-gradient(
+    90deg,
+    var(--color-progress-start),
+    var(--color-progress-end)
+  );
 }

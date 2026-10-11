@@ -303,7 +303,7 @@ export const StatsCards = memo(function StatsCards({
     if (acts.length === 0) return '';
     const sorted = [...acts].sort((a, b) => b.distance - a.distance);
     const type = sorted[0].type;
-    if (type === 'Run') return '#f97316';
+    if (type === 'Run') return 'var(--color-run)';
     return 'var(--color-text)';
   }
 
@@ -355,7 +355,7 @@ export const StatsCards = memo(function StatsCards({
         </p>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-border)]">
           <div
-            className="h-full rounded-full bg-[var(--color-accent)] transition-all"
+            className="goal-progress h-full rounded-full transition-all"
             style={{
               width: `${Math.min(goal.unit === 'time' ? (yearSeconds / (yearGoalMins * 60)) * 100 : (yearDistance / yearGoalMeters) * 100, 100)}%`,
             }}
@@ -381,7 +381,7 @@ export const StatsCards = memo(function StatsCards({
           <span>{formatHours(yearSeconds)}</span>
         </div>
         <p
-          className={`mt-1.5 text-xs ${yearDiff >= 0 ? 'text-emerald-500' : 'text-red-400'}`}
+          className={`mt-1.5 text-xs ${yearDiff >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}
         >
           {yearDiff >= 0 ? '↗' : '↘'}{' '}
           {goal.unit === 'time'
@@ -422,7 +422,7 @@ export const StatsCards = memo(function StatsCards({
         </p>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-border)]">
           <div
-            className="h-full rounded-full bg-[var(--color-accent)] transition-all"
+            className="goal-progress h-full rounded-full transition-all"
             style={{
               width: `${Math.min(goal.unit === 'time' ? (monthSeconds / (monthGoalMins * 60)) * 100 : (monthDistance / monthGoalMeters) * 100, 100)}%`,
             }}
@@ -448,7 +448,7 @@ export const StatsCards = memo(function StatsCards({
           <span>{formatHours(monthSeconds)}</span>
         </div>
         <p
-          className={`mt-1.5 text-xs ${monthDiff >= 0 ? 'text-emerald-500' : 'text-red-400'}`}
+          className={`mt-1.5 text-xs ${monthDiff >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}
         >
           {monthDiff >= 0 ? '↗' : '↘'}{' '}
           {goal.unit === 'time'
@@ -486,7 +486,7 @@ export const StatsCards = memo(function StatsCards({
         </p>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-border)]">
           <div
-            className="h-full rounded-full bg-[var(--color-accent)] transition-all"
+            className="goal-progress h-full rounded-full transition-all"
             style={{
               width: `${Math.min(goal.unit === 'time' ? (weekSeconds / (weekGoalMins * 60)) * 100 : (weekDistance / weekGoalMeters) * 100, 100)}%`,
             }}
@@ -512,7 +512,7 @@ export const StatsCards = memo(function StatsCards({
           <span>{formatHours(weekSeconds)}</span>
         </div>
         <p
-          className={`mt-1.5 text-xs ${weekDiff >= 0 ? 'text-emerald-500' : 'text-red-400'}`}
+          className={`mt-1.5 text-xs ${weekDiff >= 0 ? 'text-[var(--color-positive)]' : 'text-[var(--color-negative)]'}`}
         >
           {weekDiff >= 0 ? '↗' : '↘'}{' '}
           {goal.unit === 'time'
@@ -560,7 +560,7 @@ export const StatsCards = memo(function StatsCards({
           <div className="flex shrink-0 flex-col items-center gap-0">
             <div className="relative h-9 w-9">
               <svg
-                className="h-9 w-9 text-[#f97316]"
+                className="h-9 w-9 text-[var(--color-run)]"
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >

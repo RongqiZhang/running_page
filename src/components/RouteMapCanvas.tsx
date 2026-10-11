@@ -48,7 +48,7 @@ export function RouteMapCanvas({
     const background: maplibregl.BackgroundLayerSpecification = {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': dark === false ? '#f1f5f9' : '#202020' },
+      paint: { 'background-color': dark === false ? '#e8eff8' : '#192d46' },
     };
     if (provider === 'routes') {
       return { version: 8, sources: {}, layers: [background] };
@@ -168,9 +168,9 @@ export function RouteMapCanvas({
             'match',
             ['get', 'type'],
             'Run',
-            '#f97316',
+            dark === false ? '#2563eb' : '#a2ceff',
             'Ride',
-            '#3b82f6',
+            '#0f9f98',
             '#4dd2ff',
           ],
         },
@@ -182,7 +182,7 @@ export function RouteMapCanvas({
       fittedRef.current = routes;
       fitRoutes();
     }
-  }, [routes, selectedActivity, fitRoutes]);
+  }, [routes, selectedActivity, fitRoutes, dark]);
 
   const drawRoutesRef = useRef(drawRoutes);
   useEffect(() => {

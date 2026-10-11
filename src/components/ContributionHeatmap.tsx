@@ -30,7 +30,7 @@ function toDisplayType(type: string): 'Run' | 'Ride' | 'Hike' | 'Training' {
 }
 
 const TYPE_PALETTES: Record<string, string[]> = {
-  Run: ['#fed7aa', '#fb923c', '#f97316', '#ea580c'],
+  Run: [1, 2, 3, 4].map((level) => `var(--color-run-${level})`),
   Ride: ['#bfdbfe', '#60a5fa', '#3b82f6', '#2563eb'],
   Hike: ['#bbf7d0', '#4ade80', '#22c55e', '#16a34a'],
   Training: ['#fce7f3', '#f9a8d4', '#ec4899', '#db2777'],
@@ -38,10 +38,10 @@ const TYPE_PALETTES: Record<string, string[]> = {
 
 // Color for single-filter modes (intensity by global max)
 function getColor(distance: number, max: number, filter: SportFilter): string {
-  if (distance === 0) return 'var(--color-border)';
+  if (distance === 0) return 'var(--color-empty-day)';
   const level = Math.ceil(Math.min(distance / max, 1) * 4);
   const colors: Record<string, string[]> = {
-    all: ['#eef2bd', '#dce68a', '#b7c64b', '#879629'],
+    all: TYPE_PALETTES.Run,
     Run: TYPE_PALETTES.Run,
     Ride: TYPE_PALETTES.Ride,
     Hike: TYPE_PALETTES.Hike,
@@ -53,7 +53,7 @@ function getColor(distance: number, max: number, filter: SportFilter): string {
 
 // Color for "all" mode: ratio is per-type (dayDist / typeMax)
 function getColorAll(typeRatio: number, displayType: string): string {
-  if (typeRatio === 0) return 'var(--color-border)';
+  if (typeRatio === 0) return 'var(--color-empty-day)';
   const level = Math.ceil(Math.min(typeRatio, 1) * 4);
   const palette = TYPE_PALETTES[displayType] ?? TYPE_PALETTES.Training;
   return palette[level - 1] ?? palette[0];
@@ -287,7 +287,7 @@ export const ContributionHeatmap = memo(function ContributionHeatmap({
   }, [activities, selectedYear, isGym]);
 
   const gymTypeColors: Record<string, string> = {
-    WeightTraining: '#f97316',
+    WeightTraining: '#818cf8',
     Workout: '#0e7490',
     StairStepper: '#3b82f6',
     WaterSport: '#06b6d4',
@@ -591,7 +591,7 @@ export const ContributionHeatmap = memo(function ContributionHeatmap({
                   {week.map((day) => {
                     const bgColor =
                       day.distance === 0
-                        ? 'var(--color-border)'
+                        ? 'var(--color-empty-day)'
                         : isAll
                           ? getColorAll(day.typeRatio, day.domType)
                           : getColor(day.distance, max, filter);

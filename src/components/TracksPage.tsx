@@ -103,7 +103,7 @@ const TrackThumb = memo(function TrackThumb({
 function getColor(a: Activity): string {
   if (a.type === 'Run') {
     const km = a.distance / 1000;
-    return km >= 20 ? '#ef4444' : '#f97316';
+    return km >= 20 ? '#0f9f98' : '#2563eb';
   }
   return '#4dd2ff';
 }
@@ -260,7 +260,7 @@ export function TracksPage({
   const selectedDurationLabel = `${Math.floor(selectedSeconds / 3600) ? Math.floor(selectedSeconds / 3600) + 'h ' : ''}${Math.floor((selectedSeconds % 3600) / 60)}m`;
 
   const allSportTabs: { label: string; value: SportType; color: string }[] = [
-    { label: locale === 'zh' ? '跑步' : 'Run', value: 'Run', color: '#f97316' },
+    { label: locale === 'zh' ? '跑步' : 'Run', value: 'Run', color: '#2563eb' },
   ];
 
   return (
@@ -684,11 +684,11 @@ export function TracksPage({
                 {sportFilter === null || sportFilter === 'Run' ? (
                   <>
                     <span className="flex items-center gap-1.5">
-                      <span className="inline-block h-0.5 w-3 rounded bg-[#f97316]" />
+                      <span className="inline-block h-0.5 w-3 rounded bg-[#2563eb]" />
                       {locale === 'zh' ? '跑步' : 'Run'}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <span className="inline-block h-0.5 w-3 rounded bg-[#ef4444]" />
+                      <span className="inline-block h-0.5 w-3 rounded bg-[#0f9f98]" />
                       {locale === 'zh' ? '跑步 ≥20km' : 'Run ≥20km'}
                     </span>
                   </>
