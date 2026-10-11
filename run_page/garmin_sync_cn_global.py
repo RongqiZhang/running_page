@@ -10,7 +10,6 @@ import sys
 
 from config import FIT_FOLDER, GPX_FOLDER, JSON_FILE, SQL_FILE
 from garmin_sync import Garmin, download_new_activities, get_downloaded_ids
-
 from utils import make_activities_file
 
 if __name__ == "__main__":

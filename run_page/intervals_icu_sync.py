@@ -10,7 +10,6 @@ import gpxpy
 import requests
 from config import FOLDER_DICT, JSON_FILE, SQL_FILE
 from requests.auth import HTTPBasicAuth
-
 from utils import make_activities_file
 
 BASE_URL = "https://intervals.icu/api/v1"
@@ -173,7 +172,7 @@ def run():
     )
     options = parser.parse_args()
 
-    today = datetime.now().strftime("%Y-%m-%d")  # noqa: DTZ005
+    today = datetime.now().strftime("%Y-%m-%d")
     client = IntervalsICU(options.athlete_id, options.api_key)
     activities = client.get_activities(oldest=options.start_date, newest=today)
 

@@ -27,7 +27,6 @@ from config import (
 )
 from generator import Generator
 from tzlocal import get_localzone
-
 from utils import adjust_time_to_utc, adjust_timestamp_to_utc, to_date
 
 # struct body
@@ -548,7 +547,7 @@ class Codoon:
     @staticmethod
     def _gt(dt_str):
         dt, _, _ = dt_str.partition(".")
-        return datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S")  # noqa: DTZ007
+        return datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S")
 
     def parse_raw_data_to_namedtuple(
         self, run_data, old_gpx_ids, old_tcx_ids=None, with_gpx=False, with_tcx=False
