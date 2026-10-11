@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as polyline from '@mapbox/polyline';
+import siteConfig from '@config';
 import type { Activity } from '../types';
 import { hasRoute, routeForActivity } from '../core/routeFallback';
 import { useLocale } from '../hooks/useLocale';
@@ -14,6 +15,13 @@ export interface RouteMapProps {
   dark?: boolean;
   onClearSelection?: () => void;
 }
+
+// Without a key CARTO returns a watermark image rather than an HTTP error.
+const CARTO_BASEMAP_KEY =
+  typeof siteConfig.carto_basemap_key === 'string'
+    ? siteConfig.carto_basemap_key.trim()
+    : '';
+const INITIAL_PROVIDER = CARTO_BASEMAP_KEY ? 'carto' : 'osm';
 
 const routeCache = new WeakMap<
   Activity,
@@ -39,7 +47,9 @@ export function RouteMapCanvas({
   const styleReadyRef = useRef(false);
   const cameraRef = useRef<maplibregl.CameraOptions | null>(null);
   const fittedRef = useRef<unknown>(null);
-  const [provider, setProvider] = useState<'carto' | 'osm' | 'routes'>('carto');
+  const [provider, setProvider] = useState<'carto' | 'osm' | 'routes'>(
+    INITIAL_PROVIDER
+  );
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
   );
@@ -48,7 +58,7 @@ export function RouteMapCanvas({
     const background: maplibregl.BackgroundLayerSpecification = {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': dark === false ? '#e8eff8' : '#192d46' },
+      paint: { 'background-color': dark === false ? '#f0f1ec' : '#182332' },
     };
     if (provider === 'routes') {
       return { version: 8, sources: {}, layers: [background] };
@@ -60,10 +70,9 @@ export function RouteMapCanvas({
           type: 'raster',
           tiles:
             provider === 'carto'
-              ? ['a', 'b', 'c', 'd'].map(
-                  (host) =>
-                    `https://${host}.basemaps.cartocdn.com/${dark === false ? 'light_all' : 'dark_all'}/{z}/{x}/{y}.png`
-                )
+              ? [
+                  `https://basemaps.cartocdn.com/rastertiles/${dark === false ? 'light_all' : 'dark_all'}/{z}/{x}/{y}.png?key=${encodeURIComponent(CARTO_BASEMAP_KEY)}`,
+                ]
               : ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
           tileSize: 256,
           maxzoom: 19,
@@ -392,7 +401,7 @@ export function RouteMapCanvas({
           <button
             className="route-map-action"
             onClick={() => {
-              setProvider('carto');
+              setProvider(INITIAL_PROVIDER);
               setRetry((value) => value + 1);
             }}
           >
