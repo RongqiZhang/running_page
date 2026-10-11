@@ -7,21 +7,21 @@ on:
       save_data_in_github_cache:
         required: true
         type: boolean
-        default: false
+        default: true
       data_cache_prefix:
         required: true
         type: string
-        default: track_data
+        default: rongqizhang_garmin_runs
   workflow_call:
     inputs:
       save_data_in_github_cache:
         required: true
         type: boolean
-        default: false
+        default: true
       data_cache_prefix:
         required: true
         type: string
-        default: track_data
+        default: rongqizhang_garmin_runs
 
 # Allow one concurrent deployment
 concurrency:
@@ -52,9 +52,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Cache Data Files
+      - name: Restore personal running data
+        id: restore_data
         if: inputs.save_data_in_github_cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             activities
@@ -70,6 +71,32 @@ jobs:
           restore-keys: |
             ${{ inputs.data_cache_prefix }}-${{ github.sha }}-
             ${{ inputs.data_cache_prefix }}-
+
+      - name: Verify personal running data before publishing
+        env:
+          RESTORE_ENABLED: ${{ inputs.save_data_in_github_cache }}
+          RESTORED_CACHE_KEY: ${{ steps.restore_data.outputs.cache-matched-key }}
+          EXPECTED_CACHE_PREFIX: ${{ inputs.data_cache_prefix }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          prefix = os.environ.get('EXPECTED_CACHE_PREFIX', '')
+          key = os.environ.get('RESTORED_CACHE_KEY', '')
+          if os.environ.get('RESTORE_ENABLED', '').lower() != 'true':
+              raise SystemExit('::error::Enable the running data cache before publishing. Refusing to publish repository sample data.')
+          if not prefix or not key.startswith(prefix + '-'):
+              raise SystemExit('::error::Personal running data cache was not found. Run Run Data Sync first. The existing website will be kept.')
+          path = Path('src/static/activities.json')
+          if not path.is_file():
+              raise SystemExit('::error::Restored activity data is missing. Publishing stopped.')
+          activities = json.loads(path.read_text(encoding='utf-8'))
+          if not isinstance(activities, list) or not activities:
+              raise SystemExit('::error::Restored activity data is empty or invalid. Publishing stopped.')
+          print(f'Publishing {len(activities)} activities from the restored running data cache.')
+          PY
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
